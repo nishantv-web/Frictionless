@@ -33,7 +33,9 @@ const chromeMock = {
 }
 
 export function installChromeMock() {
-  if (typeof chrome === 'undefined' || !chrome.storage) {
+  // @ts-ignore
+  const c = typeof chrome !== 'undefined' ? chrome : undefined
+  if (!c || !c.storage) {
     // @ts-ignore
     window.chrome = chromeMock
   }
