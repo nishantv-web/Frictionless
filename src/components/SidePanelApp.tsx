@@ -162,17 +162,23 @@ export function SidePanelApp() {
           <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">UX</span>
         </button>
         <div className="flex gap-1">
-          {(['setup', 'history'] as const).map(s => (
+          {screen !== 'setup' && (
             <button
-              key={s}
-              onClick={() => setScreen(s)}
-              className={`text-[11px] px-2.5 py-1 rounded-lg transition-all font-medium ${
-                screen === s ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-accent'
-              }`}
+              onClick={() => setScreen('setup')}
+              className="text-[11px] px-2.5 py-1 rounded-lg transition-all font-medium text-muted-foreground hover:bg-accent"
             >
-              {s === 'setup' ? '+ New' : 'History'}
+              + New
             </button>
-          ))}
+          )}
+          <button
+            onClick={() => setScreen('history')}
+            className={`text-[11px] px-2.5 py-1 rounded-lg transition-all font-medium ${
+              screen === 'history' ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-accent'
+            }`}
+          >
+            History
+          </button>
+
         </div>
       </div>
 
