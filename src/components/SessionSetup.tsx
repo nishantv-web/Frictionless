@@ -163,23 +163,28 @@ export function SessionSetup({ onStart, apiKey, onApiKeyChange }: Props) {
         </div>
       </div>
 
-      {/* Performance toggle */}
-      <button
-        onClick={() => setCapturePerformance(v => !v)}
-        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
-          capturePerformance ? 'border-primary/40 bg-primary/5' : 'border-border hover:bg-accent/30'
-        }`}
-      >
-        <div className={`w-9 h-5 rounded-full flex items-center transition-colors shrink-0 ${capturePerformance ? 'bg-primary' : 'bg-muted'}`}>
-          <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform mx-0.5 ${capturePerformance ? 'translate-x-4' : 'translate-x-0'}`} />
-        </div>
-        <div>
-          <p className="text-xs font-semibold leading-tight">Capture Performance Metrics</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            Web Vitals (LCP, CLS, FID, INP, TTFB) — Live mode only, no Lighthouse.
-          </p>
-        </div>
-      </button>
+      {/* Performance — toggle group style matching Journey Type rows */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-foreground">Options</p>
+        <button
+          onClick={() => setCapturePerformance(v => !v)}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all ${
+            capturePerformance ? 'border-primary bg-primary/5' : 'border-border bg-muted/20 hover:bg-muted/50'
+          }`}
+        >
+          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+            capturePerformance ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+          }`}>
+            {capturePerformance && <span className="text-white text-[9px] font-bold leading-none">✓</span>}
+          </div>
+          <div>
+            <p className={`text-xs font-semibold leading-tight ${capturePerformance ? 'text-primary' : 'text-foreground'}`}>
+              Capture Performance Metrics
+            </p>
+            <p className="text-[10px] text-muted-foreground">Web Vitals (LCP, CLS, FID, INP, TTFB) — Live mode only, no Lighthouse.</p>
+          </div>
+        </button>
+      </div>
 
       {/* AI Config — collapsed by default to keep main flow clean */}
       <div className="border border-dashed border-border rounded-xl overflow-hidden">

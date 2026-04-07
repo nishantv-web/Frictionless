@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SessionSetup } from './SessionSetup'
 import { VideoUpload } from './VideoUpload'
 import { ReviewTweak } from './ReviewTweak'
@@ -40,6 +40,9 @@ export function SidePanelApp() {
   const [reports, setReports] = useState<ReportType[]>([])
   const [error, setError] = useState('')
   const [capturePerformance, setCapturePerformance] = useState(false)
+  const [activeTabId, setActiveTabId] = useState<number | null>(null)
+  const screenRef = useRef<Screen>('setup')
+  const contextRef = useRef<SessionContext | null>(null)
 
   useEffect(() => {
     getApiKey().then(setApiKey)
@@ -50,18 +53,22 @@ export function SidePanelApp() {
     if (apiKey) persistApiKey(apiKey)
   }, [apiKey])
 
-  // Listen for messages from content script relayed by background
+  // Keep refs in sync so the message handler never reads stale closure values
+  useEffect(() => { screenRef.current = screen }, [screen])
+  useEffect(() => { contextRef.current = context }, [context])
+
+  // Listen for messages from content script relayed by background — mounted once
   useEffect(() => {
     const handler = (msg: any) => {
-      if (msg.type === 'RECORDING_STOPPED' && screen === 'recording' && context) {
-        const data = buildSessionDataFromLive(msg.payload as LivePayload, context)
+      if (msg.type === 'RECORDING_STOPPED' && screenRef.current === 'recording' && contextRef.current) {
+        const data = buildSessionDataFromLive(msg.payload as LivePayload, contextRef.current)
         setSessionData(data)
         setScreen('review')
       }
     }
     chrome.runtime.onMessage.addListener(handler)
     return () => chrome.runtime.onMessage.removeListener(handler)
-  }, [screen, context])
+  }, [])
 
   function buildSessionDataFromLive(payload: LivePayload, ctx: SessionContext): SessionData {
     const interruptions: InterruptionEvent[] = payload.events
@@ -103,9 +110,12 @@ export function SidePanelApp() {
     setMode(selectedMode)
     setCapturePerformance(opts.capturePerformance)
     if (selectedMode === 'live') {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (tab?.id) {
-        chrome.tabs.sendMessage(tab.id, { type: 'START_RECORDING', sessionId: ctx.id, capturePerformance: opts.capturePerformance })
+      // Use lastFocusedWindow — side panel lives in its own window, not the tab's window
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+      const tabId = tab?.id ?? null
+      setActiveTabId(tabId)
+      if (tabId) {
+        chrome.tabs.sendMessage(tabId, { type: 'START_RECORDING', sessionId: ctx.id, capturePerformance: opts.capturePerformance })
       }
       setScreen('recording')
     } else {
@@ -149,8 +159,9 @@ export function SidePanelApp() {
   }
 
   async function stopLiveRecording() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: 'STOP_RECORDING' })
+    // Use stored tab ID first, fall back to lastFocusedWindow query
+    const tabId = activeTabId ?? (await chrome.tabs.query({ active: true, lastFocusedWindow: true }))[0]?.id
+    if (tabId) chrome.tabs.sendMessage(tabId, { type: 'STOP_RECORDING' })
   }
 
   return (
@@ -225,8 +236,8 @@ export function SidePanelApp() {
           <div className="space-y-1.5">
             <p className="font-bold text-sm">Generating Report</p>
             <p className="text-xs text-muted-foreground">
-            {apiKey.trim() ? 'Computing scores and consulting Gemini...' : 'Computing scores...'}
-          </p>
+              {apiKey.trim() ? 'Computing scores + fetching AI qualitative feedback...' : 'Computing friction scores...'}
+            </p>
           </div>
           {error && <p className="text-xs text-destructive bg-destructive/10 rounded-lg p-3 max-w-[260px]">{error}</p>}
         </div>

@@ -134,12 +134,12 @@ export function Report({ report, onNewSession }: Props) {
         </div>
       )}
 
-      {/* Gemini insights — only when AI key was provided */}
+      {/* AI qualitative feedback — optional enrichment, not required for scores */}
       {insights ? (
         <Card className="border-primary/20 bg-gradient-to-b from-primary/5 to-transparent">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
-              <span className="text-primary">✦</span> Gemini Insights
+              <span className="text-primary">✦</span> AI Qualitative Feedback
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-4">
@@ -171,8 +171,8 @@ export function Report({ report, onNewSession }: Props) {
       ) : (
         <Card className="border-dashed border-muted-foreground/30">
           <CardContent className="px-4 py-5 text-center space-y-1">
-            <p className="text-xs text-muted-foreground font-medium">No AI Insights</p>
-            <p className="text-[10px] text-muted-foreground">Add a Gemini API key in Setup to get narrative analysis and recommendations.</p>
+            <p className="text-xs text-muted-foreground font-medium">No qualitative feedback</p>
+            <p className="text-[10px] text-muted-foreground">Add a Gemini API key in ⚙ AI Configuration to get narrative analysis and recommendations.</p>
           </CardContent>
         </Card>
       )}
