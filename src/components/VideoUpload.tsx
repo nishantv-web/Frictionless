@@ -25,8 +25,21 @@ export function VideoUpload({ context, apiKey, onComplete, onBack }: Props) {
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  async function handleAnalyse() {
+  // Proceed manually — user will fill in counts on the Review & Tweak screen
+  function handleManualReview() {
     if (!file) return
+    onComplete({
+      totalClicks: 0,
+      interruptionEvents: [],
+      hesitationEvents: [],
+      clickEvents: [],
+      durationSeconds: Math.round(file.size / 125000),
+    })
+  }
+
+  // Optional Gemini-powered auto-extraction (only when API key is set)
+  async function handleGeminiAnalyse() {
+    if (!file || !apiKey.trim()) return
     setLoading(true)
     setError('')
 
@@ -41,7 +54,7 @@ export function VideoUpload({ context, apiKey, onComplete, onBack }: Props) {
       }
       const base64 = btoa(binary)
 
-      setProgress('Sending to Gemini Vision — this may take 30–90s for longer videos...')
+      setProgress('Sending to Gemini Vision — this may take 30–90s...')
       const rawEvents = await extractVideoEvents(apiKey, base64, file.type || 'video/mp4')
 
       setProgress('Processing extracted events...')
@@ -66,17 +79,15 @@ export function VideoUpload({ context, apiKey, onComplete, onBack }: Props) {
         interruptionEvents: interruptions,
         hesitationEvents: hesitations,
         clickEvents: clicks,
-        durationSeconds: Math.round(file.size / 125000), // rough estimate
+        durationSeconds: Math.round(file.size / 125000),
       })
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Analysis failed')
+      setError(e instanceof Error ? e.message : 'Gemini extraction failed')
     } finally {
       setLoading(false)
       setProgress('')
     }
   }
-
-  const isDragging = useRef(false)
 
   return (
     <div className="p-4 space-y-4">
@@ -89,10 +100,9 @@ export function VideoUpload({ context, apiKey, onComplete, onBack }: Props) {
       {/* Drop zone */}
       <div
         onClick={() => inputRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); isDragging.current = true }}
+        onDragOver={e => { e.preventDefault() }}
         onDrop={e => {
           e.preventDefault()
-          isDragging.current = false
           const f = e.dataTransfer.files[0]
           if (f?.type.startsWith('video/')) setFile(f)
         }}
@@ -110,7 +120,6 @@ export function VideoUpload({ context, apiKey, onComplete, onBack }: Props) {
             <p className="text-3xl">📹</p>
             <p className="text-sm font-semibold">Drop video here or click to browse</p>
             <p className="text-xs text-muted-foreground">MP4, WebM, MOV — up to 500 MB</p>
-            <p className="text-[10px] text-muted-foreground">Gemini will extract clicks, modals, and hesitation events</p>
           </div>
         )}
       </div>
@@ -126,10 +135,32 @@ export function VideoUpload({ context, apiKey, onComplete, onBack }: Props) {
         </div>
       )}
 
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={onBack} className="flex-1">← Back</Button>
-        <Button onClick={handleAnalyse} disabled={!file || loading} className="flex-1">
-          {loading ? 'Analysing...' : '✦ Analyse with Gemini'}
+      {/* How scoring works */}
+      {!loading && (
+        <div className="bg-muted/40 rounded-lg p-3 space-y-1">
+          <p className="text-[10px] font-semibold text-foreground">How it works</p>
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Watch the video and log what you observe — clicks, interruptions, hesitations. Scores are computed entirely from your inputs on the next screen.
+            {apiKey.trim() && ' Gemini can auto-extract events to save time.'}
+          </p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        {/* Primary: always available — manual review */}
+        <Button onClick={handleManualReview} disabled={!file || loading} className="w-full">
+          Continue to Review →
+        </Button>
+
+        {/* Secondary: Gemini auto-extraction, only when key is set */}
+        {apiKey.trim() && (
+          <Button variant="outline" onClick={handleGeminiAnalyse} disabled={!file || loading} className="w-full text-xs">
+            {loading ? 'Extracting events...' : '✦ Auto-extract events with Gemini'}
+          </Button>
+        )}
+
+        <Button variant="ghost" onClick={onBack} className="w-full text-xs text-muted-foreground">
+          ← Back
         </Button>
       </div>
     </div>

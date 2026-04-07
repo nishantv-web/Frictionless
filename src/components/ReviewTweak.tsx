@@ -76,7 +76,11 @@ export function ReviewTweak({ session, onGenerate, onBack }: Props) {
       {/* Header */}
       <div className="px-4 pt-4 pb-3">
         <h2 className="font-semibold text-sm">Review & Tweak</h2>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Verify auto-detected data before generating your report.</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          {session.mode === 'video'
+            ? 'Enter what you observed while watching the video. Scores are computed from your inputs.'
+            : 'Verify auto-detected data before generating your report.'}
+        </p>
       </div>
 
       {/* Context pill */}
